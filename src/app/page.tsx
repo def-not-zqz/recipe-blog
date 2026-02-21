@@ -1,65 +1,100 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { getPublishedRecipes } from "@/lib/store";
+import { filterAndSortRecipes } from "@/lib/gallery";
+import {
+  GalleryToolbar,
+  defaultFilters,
+  type GalleryFilters,
+} from "@/components/gallery-toolbar";
+import { RecipeCard } from "@/components/recipe-card";
+import { Button } from "@/components/ui/button";
+import { PlusCircle } from "lucide-react";
+
+function hasActiveFilters(f: GalleryFilters): boolean {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    f.search !== "" ||
+    f.category !== "all" ||
+    f.maxTimeMinutes !== null ||
+    f.difficulty !== "all"
+  );
+}
+
+export default function GalleryPage() {
+  const [recipes, setRecipes] = useState<ReturnType<typeof getPublishedRecipes>>([]);
+  const [filters, setFilters] = useState<GalleryFilters>(defaultFilters);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setRecipes(getPublishedRecipes());
+    setMounted(true);
+  }, []);
+
+  const filteredAndSorted = useMemo(
+    () => (mounted ? filterAndSortRecipes(recipes, filters) : []),
+    [recipes, filters, mounted]
+  );
+
+  const activeFilters = hasActiveFilters(filters);
+
+  const handleClearFilters = () => setFilters(defaultFilters);
+
+  if (!mounted) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center text-muted-foreground">
+        加载中…
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-semibold">食谱</h1>
+        <Button asChild>
+          <Link href="/recipes/new" className="gap-2">
+            <PlusCircle className="h-4 w-4" />
+            创建食谱
+          </Link>
+        </Button>
+      </div>
+
+      <GalleryToolbar
+        filters={filters}
+        onFiltersChange={setFilters}
+        hasActiveFilters={activeFilters}
+        onClearFilters={handleClearFilters}
+        resultCount={filteredAndSorted.length}
+      />
+
+      {recipes.length === 0 ? (
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-border bg-muted/30 p-8 text-center">
+          <p className="text-muted-foreground">还没有食谱，创建第一篇吧</p>
+          <Button asChild>
+            <Link href="/recipes/new" className="gap-2">
+              <PlusCircle className="h-4 w-4" />
+              创建第一篇食谱
+            </Link>
+          </Button>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      ) : filteredAndSorted.length === 0 ? (
+        <div className="flex min-h-[30vh] flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-border bg-muted/30 p-8 text-center">
+          <p className="text-muted-foreground">没有匹配的食谱</p>
+          <Button variant="outline" onClick={handleClearFilters}>
+            清空筛选
+          </Button>
         </div>
-      </main>
+      ) : (
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredAndSorted.map((recipe) => (
+            <li key={recipe.id}>
+              <RecipeCard recipe={recipe} />
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
