@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { getPublishedRecipes } from "@/lib/store";
+import type { Recipe } from "@/types/recipe";
 import { filterAndSortRecipes } from "@/lib/gallery";
 import {
   GalleryToolbar,
@@ -23,13 +23,26 @@ function hasActiveFilters(f: GalleryFilters): boolean {
 }
 
 export default function GalleryPage() {
-  const [recipes, setRecipes] = useState<ReturnType<typeof getPublishedRecipes>>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [filters, setFilters] = useState<GalleryFilters>(defaultFilters);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setRecipes(getPublishedRecipes());
-    setMounted(true);
+    let cancelled = false;
+    fetch("/api/recipes")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: Recipe[]) => {
+        if (!cancelled) setRecipes(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setRecipes([]);
+      })
+      .finally(() => {
+        if (!cancelled) setMounted(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const filteredAndSorted = useMemo(

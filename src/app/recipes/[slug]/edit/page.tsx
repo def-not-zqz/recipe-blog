@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
 import Link from "next/link";
 import { RecipeForm } from "@/components/recipe-form";
-import { getRecipeBySlug, saveRecipe } from "@/lib/store";
+import { saveRecipeAction } from "@/app/actions/recipes";
 import type { Recipe } from "@/types/recipe";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -17,9 +17,28 @@ export default function EditRecipePage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const r = getRecipeBySlug(slug);
-    setRecipe(r);
-    setMounted(true);
+    if (!slug) {
+      setMounted(true);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/recipes/slug/${encodeURIComponent(slug)}`)
+      .then((res) => {
+        if (res.status === 404) return null;
+        return res.ok ? res.json() : null;
+      })
+      .then((data: Recipe | null) => {
+        if (!cancelled) setRecipe(data ?? undefined);
+      })
+      .catch(() => {
+        if (!cancelled) setRecipe(undefined);
+      })
+      .finally(() => {
+        if (!cancelled) setMounted(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [slug]);
 
   if (!mounted) {
@@ -34,9 +53,19 @@ export default function EditRecipePage() {
     notFound();
   }
 
-  const handleSave = (updated: Recipe) => {
-    saveRecipe(updated);
-    router.push(`/recipes/${updated.slug}`);
+  const handleSave = async (updated: Recipe) => {
+    try {
+      const result = await saveRecipeAction(updated);
+      if (result.success) {
+        router.push(`/recipes/${updated.slug}`);
+      } else {
+        console.error(result.error);
+        alert("保存失败: " + result.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("保存失败: " + (err instanceof Error ? err.message : String(err)));
+    }
   };
 
   const handleCancel = () => {

@@ -16,7 +16,7 @@ import {
 } from "./recipe-form-types";
 import type { Recipe } from "@/types/recipe";
 import { slugify } from "@/lib/utils";
-import { isSlugTaken } from "@/lib/store";
+import { isSlugTakenAction } from "@/app/actions/recipes";
 
 const STEPS = [
   { id: "basic", label: "基本信息" },
@@ -29,7 +29,7 @@ const STEPS = [
 
 interface RecipeFormProps {
   initialRecipe?: Recipe;
-  onSave: (recipe: Recipe) => void;
+  onSave: (recipe: Recipe) => void | Promise<void>;
   onCancel?: () => void;
 }
 
@@ -42,19 +42,30 @@ export function RecipeForm({
     initialRecipe ? recipeToFormState(initialRecipe) : defaultFormState
   );
   const [activeStep, setActiveStep] = useState(0);
+  const [saving, setSaving] = useState(false);
 
   const update = useCallback((updates: Partial<RecipeFormState>) => {
     setState((prev) => ({ ...prev, ...updates }));
   }, []);
 
-  const handleSaveDraft = () => {
-    const recipe = formStateToRecipe(state, "draft", initialRecipe);
-    onSave(recipe);
+  const handleSaveDraft = async () => {
+    setSaving(true);
+    try {
+      const recipe = await formStateToRecipe(state, "draft", initialRecipe);
+      await onSave(recipe);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleSavePublish = () => {
-    const recipe = formStateToRecipe(state, "published", initialRecipe);
-    onSave(recipe);
+  const handleSavePublish = async () => {
+    setSaving(true);
+    try {
+      const recipe = await formStateToRecipe(state, "published", initialRecipe);
+      await onSave(recipe);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const stepId = STEPS[activeStep]?.id ?? "basic";
@@ -106,22 +117,22 @@ export function RecipeForm({
             取消
           </Button>
         )}
-        <Button type="button" variant="outline" onClick={handleSaveDraft}>
-          存为草稿
+        <Button type="button" variant="outline" onClick={handleSaveDraft} disabled={saving}>
+          {saving ? "保存中…" : "存为草稿"}
         </Button>
-        <Button type="button" onClick={handleSavePublish}>
-          发布
+        <Button type="button" onClick={handleSavePublish} disabled={saving}>
+          {saving ? "发布中…" : "发布"}
         </Button>
       </div>
     </div>
   );
 }
 
-function formStateToRecipe(
+async function formStateToRecipe(
   state: RecipeFormState,
   status: Recipe["status"],
   existing?: Recipe
-): Recipe {
+): Promise<Recipe> {
   const now = new Date().toISOString();
   const id = existing?.id ?? crypto.randomUUID();
   let finalSlug: string;
@@ -131,7 +142,7 @@ function formStateToRecipe(
     const baseSlug = slugify(state.title) || "recipe";
     finalSlug = baseSlug;
     let counter = 0;
-    while (isSlugTaken(finalSlug, id)) {
+    while ((await isSlugTakenAction(finalSlug, id)).taken) {
       counter += 1;
       finalSlug = `${baseSlug}-${counter}`;
     }

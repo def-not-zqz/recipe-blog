@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { getDraftRecipes, deleteRecipe } from "@/lib/store";
+import { deleteRecipeAction } from "@/app/actions/recipes";
 import type { Recipe } from "@/types/recipe";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,16 +28,26 @@ export default function DraftsPage() {
   const [mounted, setMounted] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  useEffect(() => {
-    setDrafts(getDraftRecipes());
-    setMounted(true);
+  const refresh = useCallback(() => {
+    return fetch("/api/recipes/drafts")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: Recipe[]) => setDrafts(Array.isArray(data) ? data : []))
+      .catch(() => setDrafts([]));
   }, []);
 
-  const refresh = () => setDrafts(getDraftRecipes());
+  useEffect(() => {
+    refresh().finally(() => setMounted(true));
+  }, [refresh]);
 
-  const handleDelete = (id: string) => {
-    deleteRecipe(id);
-    refresh();
+  const handleDelete = async (id: string) => {
+    const result = await deleteRecipeAction(id);
+    if (result.success) {
+      refresh();
+      setDeleteId(null);
+    } else {
+      console.error(result.error);
+      alert(result.error);
+    }
   };
 
   if (!mounted) {
@@ -117,10 +127,7 @@ export default function DraftsPage() {
                         </Button>
                         <Button
                           variant="destructive"
-                          onClick={() => {
-                            handleDelete(recipe.id);
-                            setDeleteId(null);
-                          }}
+                          onClick={() => handleDelete(recipe.id)}
                         >
                           删除
                         </Button>

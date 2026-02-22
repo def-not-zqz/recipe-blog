@@ -2,15 +2,25 @@
 
 import { useRouter } from "next/navigation";
 import { RecipeForm } from "@/components/recipe-form";
-import { saveRecipe } from "@/lib/store";
+import { saveRecipeAction } from "@/app/actions/recipes";
 import type { Recipe } from "@/types/recipe";
 
 export default function NewRecipePage() {
   const router = useRouter();
 
-  const handleSave = (recipe: Recipe) => {
-    saveRecipe(recipe);
-    router.push(recipe.status === "published" ? `/recipes/${recipe.slug}` : "/drafts");
+  const handleSave = async (recipe: Recipe) => {
+    try {
+      const result = await saveRecipeAction(recipe);
+      if (result.success) {
+        router.push(recipe.status === "published" ? `/recipes/${recipe.slug}` : "/drafts");
+      } else {
+        console.error(result.error);
+        alert("保存失败: " + result.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("保存失败: " + (err instanceof Error ? err.message : String(err)));
+    }
   };
 
   return (

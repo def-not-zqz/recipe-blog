@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter, notFound } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
+import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getRecipeBySlug } from "@/lib/store";
+import type { Recipe } from "@/types/recipe";
+import type { Comment } from "@/types/comment";
 import {
   ServingSelector,
   IngredientsList,
@@ -13,22 +14,92 @@ import {
 } from "@/components/recipe-detail";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Pencil, Printer } from "lucide-react";
 
 export default function RecipeDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const slug = typeof params.slug === "string" ? params.slug : "";
-  const [recipe, setRecipe] = useState<ReturnType<typeof getRecipeBySlug>>(undefined);
+  const [recipe, setRecipe] = useState<Recipe | undefined>(undefined);
   const [servings, setServings] = useState(4);
   const [mounted, setMounted] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentName, setCommentName] = useState("");
+  const [commentEmail, setCommentEmail] = useState("");
+  const [commentContent, setCommentContent] = useState("");
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [commentError, setCommentError] = useState<string | null>(null);
 
   useEffect(() => {
-    const r = getRecipeBySlug(slug);
-    setRecipe(r);
-    if (r) setServings(r.baseServings);
-    setMounted(true);
+    if (!slug) {
+      setMounted(true);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/recipes/slug/${encodeURIComponent(slug)}`)
+      .then((res) => {
+        if (res.status === 404) return null;
+        return res.ok ? res.json() : null;
+      })
+      .then((data: Recipe | null) => {
+        if (!cancelled && data) {
+          setRecipe(data);
+          setServings(data.baseServings);
+        } else if (!cancelled) {
+          setRecipe(undefined);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setRecipe(undefined);
+      })
+      .finally(() => {
+        if (!cancelled) setMounted(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [slug]);
+
+  const fetchComments = useCallback((recipeId: string) => {
+    fetch(`/api/recipes/id/${recipeId}/comments`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: Comment[]) => setComments(Array.isArray(data) ? data : []))
+      .catch(() => setComments([]));
+  }, []);
+
+  useEffect(() => {
+    if (recipe?.id) fetchComments(recipe.id);
+  }, [recipe?.id, fetchComments]);
+
+  const handleSubmitComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recipe?.id || !commentContent.trim() || commentSubmitting) return;
+    setCommentSubmitting(true);
+    setCommentError(null);
+    fetch(`/api/recipes/id/${recipe.id}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        author_name: commentName.trim() || "匿名",
+        author_email: commentEmail.trim() || undefined,
+        content: commentContent.trim(),
+      }),
+    })
+      .then((res) => {
+        if (!res.ok) return res.json().then((d) => Promise.reject(d?.error || res.statusText));
+        return res.json();
+      })
+      .then((newComment: Comment) => {
+        setComments((prev) => [newComment, ...prev]);
+        setCommentContent("");
+        setCommentName("");
+        setCommentEmail("");
+      })
+      .catch((err) => setCommentError(typeof err === "string" ? err : "评论提交失败，请稍后再试"))
+      .finally(() => setCommentSubmitting(false));
+  };
 
   if (!mounted) {
     return (
@@ -153,6 +224,74 @@ export default function RecipeDetailPage() {
             <NutritionBlock nutrition={recipe.nutrition} scale={scale} />
           </div>
         )}
+
+        <Separator className="print:hidden" />
+
+        <section aria-label="评论" className="print:hidden space-y-4">
+          <h2 className="text-xl font-semibold">评论</h2>
+
+          <form onSubmit={handleSubmitComment} className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="comment-name">昵称（选填）</Label>
+                <Input
+                  id="comment-name"
+                  value={commentName}
+                  onChange={(e) => setCommentName(e.target.value)}
+                  placeholder="匿名"
+                  className="bg-background"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="comment-email">邮箱（选填，不公开）</Label>
+                <Input
+                  id="comment-email"
+                  type="email"
+                  value={commentEmail}
+                  onChange={(e) => setCommentEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="bg-background"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="comment-content">评论内容 *</Label>
+              <Textarea
+                id="comment-content"
+                value={commentContent}
+                onChange={(e) => setCommentContent(e.target.value)}
+                placeholder="写下你的想法…"
+                required
+                rows={3}
+                className="resize-none bg-background"
+              />
+            </div>
+            {commentError && (
+              <p className="text-sm text-destructive">{commentError}</p>
+            )}
+            <Button type="submit" disabled={commentSubmitting || !commentContent.trim()}>
+              {commentSubmitting ? "提交中…" : "发表评论"}
+            </Button>
+          </form>
+
+          <ul className="space-y-4">
+            {comments.length === 0 ? (
+              <li className="text-sm text-muted-foreground">暂无评论，来抢沙发吧～</li>
+            ) : (
+              comments.map((c) => (
+                <li key={c.id} className="rounded-lg border border-border bg-muted/20 p-4">
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="font-medium">{c.author_name || "匿名"}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(c.created_at).toLocaleString("zh-CN")}
+                    </span>
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm text-foreground">{c.content}</p>
+                </li>
+              ))
+            )}
+          </ul>
+        </section>
       </div>
 
     </article>
