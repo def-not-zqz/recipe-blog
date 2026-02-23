@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import { getPublishedRecipes, saveRecipe } from "@/lib/supabase/recipes";
 import { isServerAdmin } from "@/lib/auth";
 import type { Recipe } from "@/types/recipe";
 
-/** GET /api/recipes — published recipes for gallery */
+const CACHE_REVALIDATE_SECONDS = 60;
+
+/** GET /api/recipes — published recipes for gallery (cached, ISR) */
 export async function GET() {
   try {
-    const recipes = await getPublishedRecipes();
+    const recipes = await unstable_cache(
+      getPublishedRecipes,
+      ["recipes-published"],
+      { revalidate: CACHE_REVALIDATE_SECONDS }
+    )();
     return NextResponse.json(recipes);
   } catch (e) {
     console.error(e);

@@ -20,6 +20,9 @@ export const metadata: Metadata = {
   description: "食谱博客 — 记录与分享食谱",
 };
 
+/** ISR: revalidate route segment every 60s (home + recipe detail benefit from cached API). */
+export const revalidate = 60;
+
 export default function RootLayout({
   children,
 }: Readonly<{
