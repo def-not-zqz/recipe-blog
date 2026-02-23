@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Recipe } from "@/types/recipe";
 import type { Comment } from "@/types/comment";
+import { useAuth } from "@/components/auth-provider";
 import {
   ServingSelector,
   IngredientsList,
@@ -31,6 +32,7 @@ export default function RecipeDetailPage() {
   const [commentContent, setCommentContent] = useState("");
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     if (!slug) {
@@ -166,12 +168,14 @@ export default function RecipeDetailPage() {
               <Printer className="h-4 w-4" />
               打印
             </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link href={`/recipes/${recipe.slug}/edit`} className="gap-2">
-                <Pencil className="h-4 w-4" />
-                编辑
-              </Link>
-            </Button>
+            {isAdmin && (
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/recipes/${recipe.slug}/edit`} className="gap-2">
+                  <Pencil className="h-4 w-4" />
+                  编辑
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPublishedRecipes, saveRecipe } from "@/lib/supabase/recipes";
+import { isServerAdmin } from "@/lib/auth";
 import type { Recipe } from "@/types/recipe";
 
 /** GET /api/recipes — published recipes for gallery */
@@ -16,9 +17,13 @@ export async function GET() {
   }
 }
 
-/** POST /api/recipes — create or update recipe (upsert) */
+/** POST /api/recipes — create or update recipe (upsert). Admin only. */
 export async function POST(request: Request) {
   try {
+    const admin = await isServerAdmin();
+    if (!admin) {
+      return NextResponse.json({ error: "需要管理员权限" }, { status: 403 });
+    }
     const body = (await request.json()) as Recipe;
     await saveRecipe(body);
     return NextResponse.json({ success: true });

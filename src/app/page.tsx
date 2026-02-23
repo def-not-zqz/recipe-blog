@@ -11,6 +11,7 @@ import {
 } from "@/components/gallery-toolbar";
 import { RecipeCard } from "@/components/recipe-card";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/components/auth-provider";
 import { PlusCircle } from "lucide-react";
 
 function hasActiveFilters(f: GalleryFilters): boolean {
@@ -26,6 +27,7 @@ export default function GalleryPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [filters, setFilters] = useState<GalleryFilters>(defaultFilters);
   const [mounted, setMounted] = useState(false);
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     let cancelled = false;
@@ -66,12 +68,14 @@ export default function GalleryPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold">食谱</h1>
-        <Button asChild>
-          <Link href="/recipes/new" className="gap-2">
-            <PlusCircle className="h-4 w-4" />
-            创建食谱
-          </Link>
-        </Button>
+        {isAdmin && (
+          <Button asChild>
+            <Link href="/recipes/new" className="gap-2">
+              <PlusCircle className="h-4 w-4" />
+              创建食谱
+            </Link>
+          </Button>
+        )}
       </div>
 
       <GalleryToolbar
@@ -85,12 +89,14 @@ export default function GalleryPage() {
       {recipes.length === 0 ? (
         <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-border bg-muted/30 p-8 text-center">
           <p className="text-muted-foreground">还没有食谱，创建第一篇吧</p>
-          <Button asChild>
-            <Link href="/recipes/new" className="gap-2">
-              <PlusCircle className="h-4 w-4" />
-              创建第一篇食谱
-            </Link>
-          </Button>
+          {isAdmin && (
+            <Button asChild>
+              <Link href="/recipes/new" className="gap-2">
+                <PlusCircle className="h-4 w-4" />
+                创建第一篇食谱
+              </Link>
+            </Button>
+          )}
         </div>
       ) : filteredAndSorted.length === 0 ? (
         <div className="flex min-h-[30vh] flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-border bg-muted/30 p-8 text-center">
