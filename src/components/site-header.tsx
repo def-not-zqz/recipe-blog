@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/", label: "食谱", icon: BookOpen },
   { href: "/drafts", label: "草稿箱", icon: FileEdit, adminOnly: true },
-  { href: "/settings", label: "设置", icon: Settings },
+  // { href: "/settings", label: "设置", icon: Settings },
   { href: "/about", label: "关于", icon: Info },
 ];
 
