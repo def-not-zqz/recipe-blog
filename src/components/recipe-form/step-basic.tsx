@@ -63,14 +63,9 @@ export function StepBasic({ state, onChange }: StepBasicProps) {
         />
       </div>
       <div>
-        <Label>主图 (URL 或上传)</Label>
+        <Label>封面</Label>
         <div className="mt-1 flex gap-2">
-          <Input
-            value={state.image ?? ""}
-            onChange={(e) => onChange({ image: e.target.value || undefined })}
-            placeholder="图片 URL"
-          />
-          <label className="flex cursor-pointer items-center rounded-md border border-border px-3 py-2 text-sm hover:bg-muted">
+          <label className="inline-flex cursor-pointer items-center rounded-md border border-border px-3 py-2 text-sm hover:bg-muted whitespace-nowrap">
             <input
               type="file"
               accept="image/*"
