@@ -17,6 +17,7 @@ export interface RecipeRow {
   ingredients_json: unknown;
   steps_json: unknown;
   tips_json: unknown;
+  changelog_json: unknown;
   nutrition_json: unknown;
   notes: string | null;
   created_at: string;
@@ -40,6 +41,7 @@ export function rowToRecipe(row: RecipeRow): Recipe {
     ingredients: Array.isArray(row.ingredients_json) ? row.ingredients_json as Recipe["ingredients"] : [],
     steps: Array.isArray(row.steps_json) ? row.steps_json as Recipe["steps"] : [],
     tips: Array.isArray(row.tips_json) ? (row.tips_json as string[]) : undefined,
+    changelog: Array.isArray(row.changelog_json) ? (row.changelog_json as string[]) : undefined,
     notes: row.notes ?? undefined,
     nutrition: row.nutrition_json && typeof row.nutrition_json === "object" && !Array.isArray(row.nutrition_json)
       ? (row.nutrition_json as Recipe["nutrition"])
@@ -66,6 +68,7 @@ export function recipeToRow(recipe: Recipe): Omit<RecipeRow, "created_at" | "upd
     ingredients_json: recipe.ingredients ?? [],
     steps_json: recipe.steps ?? [],
     tips_json: recipe.tips ?? [],
+    changelog_json: recipe.changelog ?? [],
     nutrition_json: recipe.nutrition ?? null,
     notes: recipe.notes ?? null,
   };

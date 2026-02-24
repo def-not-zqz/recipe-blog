@@ -46,6 +46,7 @@ export interface Recipe {
   ingredients: Ingredient[];
   steps: Step[];
   tips?: string[];
+  changelog?: string[];
   notes?: string;
   nutrition?: Nutrition;
   status: RecipeStatus;

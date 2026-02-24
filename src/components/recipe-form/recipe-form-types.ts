@@ -14,6 +14,7 @@ export interface RecipeFormState {
   ingredients: Ingredient[];
   steps: Step[];
   tips?: string[];
+  changelog?: string[];
   notes?: string;
   nutrition?: Nutrition;
 }
@@ -40,6 +41,7 @@ export function recipeToFormState(recipe: Recipe): RecipeFormState {
     ingredients: recipe.ingredients.map((i) => ({ ...i })),
     steps: recipe.steps.map((s) => ({ ...s })),
     tips: recipe.tips?.length ? [...recipe.tips] : undefined,
+    changelog: recipe.changelog?.length ? [...recipe.changelog] : undefined,
     notes: recipe.notes,
     nutrition: recipe.nutrition
       ? { ...recipe.nutrition }

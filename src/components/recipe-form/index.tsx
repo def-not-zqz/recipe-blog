@@ -7,6 +7,7 @@ import { StepBasic } from "./step-basic";
 import { StepIngredients } from "./step-ingredients";
 import { StepSteps } from "./step-steps";
 import { StepTips } from "./step-tips";
+import { StepChangelog } from "./step-changelog";
 import { StepNutrition } from "./step-nutrition";
 import { RecipePreview } from "./recipe-preview";
 import {
@@ -23,6 +24,7 @@ const STEPS = [
   { id: "ingredients", label: "原料" },
   { id: "steps", label: "步骤" },
   { id: "tips", label: "小贴士" },
+  { id: "changelog", label: "更新记录" },
   { id: "nutrition", label: "营养" },
   { id: "preview", label: "预览" },
 ] as const;
@@ -103,6 +105,9 @@ export function RecipeForm({
         <TabsContent value="tips" className="mt-4">
           <StepTips state={state} onChange={update} />
         </TabsContent>
+        <TabsContent value="changelog" className="mt-4">
+          <StepChangelog state={state} onChange={update} />
+        </TabsContent>
         <TabsContent value="nutrition" className="mt-4">
           <StepNutrition state={state} onChange={update} />
         </TabsContent>
@@ -165,6 +170,7 @@ async function formStateToRecipe(
     ingredients: state.ingredients,
     steps: state.steps,
     tips: state.tips?.length ? state.tips : undefined,
+    changelog: state.changelog?.length ? state.changelog : undefined,
     notes: state.notes,
     nutrition: state.nutrition,
     status,

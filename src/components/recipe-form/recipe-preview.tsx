@@ -31,6 +31,7 @@ function formStateToRecipe(state: RecipeFormState): Recipe {
     ingredients: state.ingredients,
     steps: state.steps,
     tips: state.tips?.length ? state.tips : undefined,
+    changelog: state.changelog?.length ? state.changelog : undefined,
     notes: state.notes,
     nutrition: state.nutrition,
     status: "draft",
@@ -73,6 +74,16 @@ export function RecipePreview({ state }: RecipePreviewProps) {
                     <li key={i} className="text-foreground">{s.content}</li>
                   ))}
                 </ol>
+              </section>
+            )}
+            {(state.changelog?.length ?? 0) > 0 && (
+              <section>
+                <h3 className="mb-2 font-medium">更新记录</h3>
+                <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                  {state.changelog!.map((entry, i) => (
+                    <li key={i} className="text-foreground">{entry}</li>
+                  ))}
+                </ul>
               </section>
             )}
             {state.nutrition && Object.values(state.nutrition).some((v) => typeof v === "number") && (

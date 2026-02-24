@@ -211,6 +211,20 @@ export default function RecipeDetailPage() {
           </>
         )}
 
+        {(recipe.changelog?.length ?? 0) > 0 && (
+          <>
+            <Separator />
+            <section aria-label="更新记录">
+              <h2 className="mb-3 text-xl font-semibold">更新记录</h2>
+              <ul className="list-inside list-disc space-y-1 text-muted-foreground">
+                {recipe.changelog!.map((entry, i) => (
+                  <li key={i} className="text-foreground">{entry}</li>
+                ))}
+              </ul>
+            </section>
+          </>
+        )}
+
         {recipe.notes && (
           <>
             <Separator />
