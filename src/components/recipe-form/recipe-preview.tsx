@@ -8,8 +8,11 @@ import {
   IngredientsList,
   NutritionBlock,
   RecipeMeta,
-  MarkdownContent,
 } from "@/components/recipe-detail";
+import { StepsSectionView } from "@/components/recipe-detail/steps-section";
+import { TipsSection } from "@/components/recipe-detail/tips-section";
+import { NotesSection } from "@/components/recipe-detail/notes-section";
+import { ChangelogSection } from "@/components/recipe-detail/changelog-section";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { Recipe } from "@/types/recipe";
@@ -76,105 +79,13 @@ export function RecipePreview({ state }: RecipePreviewProps) {
 
             <Separator />
 
-            <section aria-label="步骤">
-              <h2 className="mb-3 text-xl font-semibold">步骤</h2>
-              <div className="space-y-4">
-                {state.steps.map((sec, sectionIdx) => (
-                  <div key={sectionIdx} className="space-y-2">
-                    {sec.name?.trim() && (
-                      <h3 className="text-sm font-medium text-foreground">
-                        {sec.name}
-                      </h3>
-                    )}
-                    <ol className="space-y-4 text-muted-foreground">
-                      {sec.items.map((step, i) => (
-                        <li key={i} className="flex gap-2 text-foreground">
-                          <span className="mt-1 w-5 shrink-0 text-right font-medium text-muted-foreground">
-                            {i + 1}.
-                          </span>
-                          <div className="space-y-2">
-                            <MarkdownContent inline>{step.content}</MarkdownContent>
-                            {step.image && (
-                              <div className="relative mt-1 aspect-[4/3] w-full max-w-md overflow-hidden rounded-md bg-muted">
-                                {step.image.startsWith("data:") ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={step.image}
-                                    alt={state.title ? `${state.title} - 步骤 ${i + 1}` : "步骤图片"}
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  <Image
-                                    src={step.image}
-                                    alt={state.title ? `${state.title} - 步骤 ${i + 1}` : "步骤图片"}
-                                    fill
-                                    className="object-cover"
-                                  />
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                ))}
-              </div>
-            </section>
+            <StepsSectionView steps={state.steps} />
 
-            {(state.tips?.length ?? 0) > 0 && (
-              <>
-                <Separator />
-                <section aria-label="小贴士">
-                  <h2 className="mb-3 text-xl font-semibold">小贴士</h2>
-                  <ul className="space-y-1 text-muted-foreground">
-                    {state.tips!.map((tip, i) => (
-                      <li key={i} className="flex gap-2 text-foreground">
-                        <span className="mt-1 w-5 shrink-0 text-right font-medium text-muted-foreground">
-                          {i + 1}.
-                        </span>
-                        <div>
-                          <MarkdownContent inline>{tip}</MarkdownContent>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              </>
-            )}
+            <TipsSection tips={state.tips} />
 
-            {state.notes && (
-              <>
-                <Separator />
-                <section aria-label="说明">
-                  <h2 className="mb-3 text-xl font-semibold">说明</h2>
-                  <div className="text-muted-foreground whitespace-pre-wrap">
-                    <MarkdownContent>{state.notes}</MarkdownContent>
-                  </div>
-                </section>
-              </>
-            )}
+            <NotesSection notes={state.notes} />
 
-            {(state.changelog?.length ?? 0) > 0 && (
-              <>
-                <Separator />
-                <section aria-label="更新记录">
-                  <h2 className="mb-3 text-xl font-semibold">更新记录</h2>
-                  <ul className="space-y-1 text-muted-foreground">
-                    {state.changelog!.map((entry, i) => (
-                      <li key={i} className="flex gap-2 text-foreground">
-                        <span className="mt-1 w-5 shrink-0 text-right font-medium text-muted-foreground">
-                          {i + 1}.
-                        </span>
-                        <div>
-                          <MarkdownContent inline>{entry}</MarkdownContent>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              </>
-            )}
+            <ChangelogSection changelog={state.changelog} />
           </>
         ) : (
           <p className="text-sm text-muted-foreground">填写基本信息后即可预览。</p>

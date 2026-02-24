@@ -69,7 +69,7 @@ export default function EditRecipePage() {
   };
 
   const handleCancel = () => {
-    router.push(`/recipes/${slug}`);
+    router.push("/");
   };
 
   return (
