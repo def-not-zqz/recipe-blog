@@ -10,6 +10,7 @@ import {
   MarkdownContent,
 } from "@/components/recipe-detail";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import type { Recipe } from "@/types/recipe";
 
 /** Build a minimal Recipe from form state for preview rendering. */
@@ -60,55 +61,76 @@ export function RecipePreview({ state }: RecipePreviewProps) {
           onChange={setServings}
         />
       </CardHeader>
-      <CardContent className="space-y-4">
-        {state.title && (
+      <CardContent className="space-y-6">
+        {state.title ? (
           <>
-            <section>
-              <h3 className="mb-2 font-medium">原料</h3>
-              <IngredientsList ingredients={state.ingredients} scale={scale} />
-            </section>
-            {state.steps.length > 0 && (
-              <section>
-                <h3 className="mb-2 font-medium">步骤</h3>
-                <ol className="list-inside list-decimal space-y-1 text-sm text-muted-foreground">
-                  {state.steps.map((s, i) => (
-                    <li key={i} className="text-foreground">
-                      <MarkdownContent>{s.content}</MarkdownContent>
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            )}
-            {(state.tips?.length ?? 0) > 0 && (
-              <section>
-                <h3 className="mb-2 font-medium">小贴士</h3>
-                <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-                  {state.tips!.map((tip, i) => (
-                    <li key={i} className="text-foreground">
-                      <MarkdownContent inline>{tip}</MarkdownContent>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-            {(state.changelog?.length ?? 0) > 0 && (
-              <section>
-                <h3 className="mb-2 font-medium">更新记录</h3>
-                <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-                  {state.changelog!.map((entry, i) => (
-                    <li key={i} className="text-foreground">
-                      <MarkdownContent inline>{entry}</MarkdownContent>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
             {state.nutrition && Object.values(state.nutrition).some((v) => typeof v === "number") && (
               <NutritionBlock nutrition={state.nutrition} scale={scale} />
             )}
+
+            <section aria-label="原料">
+              <h2 className="mb-3 text-xl font-semibold">原料</h2>
+              <IngredientsList ingredients={state.ingredients} scale={scale} />
+            </section>
+
+            <Separator />
+
+            <section aria-label="步骤">
+              <h2 className="mb-3 text-xl font-semibold">步骤</h2>
+              <ol className="list-inside list-decimal space-y-4 text-muted-foreground">
+                {state.steps.map((s, i) => (
+                  <li key={i} className="pl-2 text-foreground">
+                    <MarkdownContent inline>{s.content}</MarkdownContent>
+                  </li>
+                ))}
+              </ol>
+            </section>
+
+            {(state.tips?.length ?? 0) > 0 && (
+              <>
+                <Separator />
+                <section aria-label="小贴士">
+                  <h2 className="mb-3 text-xl font-semibold">小贴士</h2>
+                  <ul className="list-inside list-disc space-y-1 text-muted-foreground">
+                    {state.tips!.map((tip, i) => (
+                      <li key={i} className="text-foreground">
+                        <MarkdownContent inline>{tip}</MarkdownContent>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              </>
+            )}
+
+            {state.notes && (
+              <>
+                <Separator />
+                <section aria-label="说明">
+                  <h2 className="mb-3 text-xl font-semibold">说明</h2>
+                  <div className="text-muted-foreground whitespace-pre-wrap">
+                    <MarkdownContent>{state.notes}</MarkdownContent>
+                  </div>
+                </section>
+              </>
+            )}
+
+            {(state.changelog?.length ?? 0) > 0 && (
+              <>
+                <Separator />
+                <section aria-label="更新记录">
+                  <h2 className="mb-3 text-xl font-semibold">更新记录</h2>
+                  <ul className="list-inside list-disc space-y-1 text-muted-foreground">
+                    {state.changelog!.map((entry, i) => (
+                      <li key={i} className="text-foreground">
+                        <MarkdownContent inline>{entry}</MarkdownContent>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              </>
+            )}
           </>
-        )}
-        {!state.title && (
+        ) : (
           <p className="text-sm text-muted-foreground">填写基本信息后即可预览。</p>
         )}
       </CardContent>
