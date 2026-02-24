@@ -76,6 +76,16 @@ export function RecipePreview({ state }: RecipePreviewProps) {
                 </ol>
               </section>
             )}
+            {(state.tips?.length ?? 0) > 0 && (
+              <section>
+                <h3 className="mb-2 font-medium">小贴士</h3>
+                <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                  {state.tips!.map((tip, i) => (
+                    <li key={i} className="text-foreground">{tip}</li>
+                  ))}
+                </ul>
+              </section>
+            )}
             {(state.changelog?.length ?? 0) > 0 && (
               <section>
                 <h3 className="mb-2 font-medium">更新记录</h3>
