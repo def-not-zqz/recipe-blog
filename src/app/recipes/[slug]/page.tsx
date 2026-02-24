@@ -12,6 +12,7 @@ import {
   IngredientsList,
   NutritionBlock,
   RecipeMeta,
+  MarkdownContent,
 } from "@/components/recipe-detail";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -179,6 +180,12 @@ export default function RecipeDetailPage() {
           </div>
         </div>
 
+        {recipe.nutrition && (
+          <div className="print:hidden">
+            <NutritionBlock nutrition={recipe.nutrition} scale={scale} />
+          </div>
+        )}
+
         <section aria-label="原料">
           <h2 className="mb-3 text-xl font-semibold">原料</h2>
           <IngredientsList ingredients={recipe.ingredients} scale={scale} />
@@ -191,7 +198,7 @@ export default function RecipeDetailPage() {
           <ol className="list-inside list-decimal space-y-4 text-muted-foreground">
             {recipe.steps.map((step, i) => (
               <li key={i} className="pl-2 text-foreground">
-                {step.content}
+                <MarkdownContent inline>{step.content}</MarkdownContent>
               </li>
             ))}
           </ol>
@@ -204,21 +211,9 @@ export default function RecipeDetailPage() {
               <h2 className="mb-3 text-xl font-semibold">小贴士</h2>
               <ul className="list-inside list-disc space-y-1 text-muted-foreground">
                 {recipe.tips!.map((tip, i) => (
-                  <li key={i} className="text-foreground">{tip}</li>
-                ))}
-              </ul>
-            </section>
-          </>
-        )}
-
-        {(recipe.changelog?.length ?? 0) > 0 && (
-          <>
-            <Separator />
-            <section aria-label="更新记录">
-              <h2 className="mb-3 text-xl font-semibold">更新记录</h2>
-              <ul className="list-inside list-disc space-y-1 text-muted-foreground">
-                {recipe.changelog!.map((entry, i) => (
-                  <li key={i} className="text-foreground">{entry}</li>
+                  <li key={i} className="text-foreground">
+                    <MarkdownContent inline>{tip}</MarkdownContent>
+                  </li>
                 ))}
               </ul>
             </section>
@@ -230,17 +225,27 @@ export default function RecipeDetailPage() {
             <Separator />
             <section aria-label="说明">
               <h2 className="mb-3 text-xl font-semibold">说明</h2>
-              <p className="text-muted-foreground whitespace-pre-wrap">
-                {recipe.notes}
-              </p>
+              <div className="text-muted-foreground whitespace-pre-wrap">
+                <MarkdownContent>{recipe.notes}</MarkdownContent>
+              </div>
             </section>
           </>
         )}
 
-        {recipe.nutrition && (
-          <div className="print:hidden">
-            <NutritionBlock nutrition={recipe.nutrition} scale={scale} />
-          </div>
+        {(recipe.changelog?.length ?? 0) > 0 && (
+          <>
+            <Separator />
+            <section aria-label="更新记录">
+              <h2 className="mb-3 text-xl font-semibold">更新记录</h2>
+              <ul className="list-inside list-disc space-y-1 text-muted-foreground">
+                {recipe.changelog!.map((entry, i) => (
+                  <li key={i} className="text-foreground">
+                    <MarkdownContent inline>{entry}</MarkdownContent>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </>
         )}
 
         <Separator className="print:hidden" />

@@ -7,6 +7,7 @@ import {
   IngredientsList,
   NutritionBlock,
   RecipeMeta,
+  MarkdownContent,
 } from "@/components/recipe-detail";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { Recipe } from "@/types/recipe";
@@ -71,7 +72,9 @@ export function RecipePreview({ state }: RecipePreviewProps) {
                 <h3 className="mb-2 font-medium">步骤</h3>
                 <ol className="list-inside list-decimal space-y-1 text-sm text-muted-foreground">
                   {state.steps.map((s, i) => (
-                    <li key={i} className="text-foreground">{s.content}</li>
+                    <li key={i} className="text-foreground">
+                      <MarkdownContent>{s.content}</MarkdownContent>
+                    </li>
                   ))}
                 </ol>
               </section>
@@ -81,7 +84,9 @@ export function RecipePreview({ state }: RecipePreviewProps) {
                 <h3 className="mb-2 font-medium">小贴士</h3>
                 <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
                   {state.tips!.map((tip, i) => (
-                    <li key={i} className="text-foreground">{tip}</li>
+                    <li key={i} className="text-foreground">
+                      <MarkdownContent inline>{tip}</MarkdownContent>
+                    </li>
                   ))}
                 </ul>
               </section>
@@ -91,7 +96,9 @@ export function RecipePreview({ state }: RecipePreviewProps) {
                 <h3 className="mb-2 font-medium">更新记录</h3>
                 <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
                   {state.changelog!.map((entry, i) => (
-                    <li key={i} className="text-foreground">{entry}</li>
+                    <li key={i} className="text-foreground">
+                      <MarkdownContent inline>{entry}</MarkdownContent>
+                    </li>
                   ))}
                 </ul>
               </section>
