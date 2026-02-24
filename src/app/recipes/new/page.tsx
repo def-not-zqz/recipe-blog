@@ -12,7 +12,7 @@ export default function NewRecipePage() {
     try {
       const result = await saveRecipeAction(recipe);
       if (result.success) {
-        router.push(recipe.status === "published" ? `/recipes/${recipe.slug}` : "/drafts");
+        router.push(recipe.status === "published" ? "/" : "/drafts");
       } else {
         console.error(result.error);
         alert("保存失败: " + result.error);

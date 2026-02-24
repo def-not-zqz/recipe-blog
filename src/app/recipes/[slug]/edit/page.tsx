@@ -57,7 +57,7 @@ export default function EditRecipePage() {
     try {
       const result = await saveRecipeAction(updated);
       if (result.success) {
-        router.push(`/recipes/${updated.slug}`);
+        router.push(updated.status === "published" ? "/" : "/drafts");
       } else {
         console.error(result.error);
         alert("保存失败: " + result.error);
