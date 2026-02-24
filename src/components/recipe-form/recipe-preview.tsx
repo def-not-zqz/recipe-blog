@@ -77,13 +77,24 @@ export function RecipePreview({ state }: RecipePreviewProps) {
 
             <section aria-label="步骤">
               <h2 className="mb-3 text-xl font-semibold">步骤</h2>
-              <ol className="list-inside list-decimal space-y-4 text-muted-foreground">
-                {state.steps.map((s, i) => (
-                  <li key={i} className="pl-2 text-foreground">
-                    <MarkdownContent inline>{s.content}</MarkdownContent>
-                  </li>
+              <div className="space-y-4">
+                {state.steps.map((sec, sectionIdx) => (
+                  <div key={sectionIdx} className="space-y-2">
+                    {sec.name?.trim() && (
+                      <h3 className="text-sm font-medium text-foreground">
+                        {sec.name}
+                      </h3>
+                    )}
+                    <ol className="list-inside list-decimal space-y-4 text-muted-foreground">
+                      {sec.items.map((step, i) => (
+                        <li key={i} className="pl-2 text-foreground">
+                          <MarkdownContent inline>{step.content}</MarkdownContent>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
                 ))}
-              </ol>
+              </div>
             </section>
 
             {(state.tips?.length ?? 0) > 0 && (

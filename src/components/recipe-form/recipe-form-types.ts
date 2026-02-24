@@ -1,4 +1,9 @@
-import type { Recipe, Ingredient, Step, Nutrition } from "@/types/recipe";
+import type {
+  Recipe,
+  IngredientsSection,
+  StepsSection,
+  Nutrition,
+} from "@/types/recipe";
 
 /** Editable form state for create/edit. Same as Recipe but id/slug/dates optional for new. */
 export interface RecipeFormState {
@@ -11,8 +16,8 @@ export interface RecipeFormState {
   totalTimeMinutes?: number;
   difficulty?: Recipe["difficulty"];
   category?: Recipe["category"];
-  ingredients: Ingredient[];
-  steps: Step[];
+  ingredients: IngredientsSection[];
+  steps: StepsSection[];
   tips?: string[];
   changelog?: string[];
   notes?: string;
@@ -23,8 +28,8 @@ export const defaultFormState: RecipeFormState = {
   title: "",
   description: "",
   baseServings: 4,
-  ingredients: [],
-  steps: [],
+  ingredients: [{ items: [] }],
+  steps: [{ items: [] }],
 };
 
 export function recipeToFormState(recipe: Recipe): RecipeFormState {
@@ -38,8 +43,14 @@ export function recipeToFormState(recipe: Recipe): RecipeFormState {
     totalTimeMinutes: recipe.totalTimeMinutes,
     difficulty: recipe.difficulty,
     category: recipe.category,
-    ingredients: recipe.ingredients.map((i) => ({ ...i })),
-    steps: recipe.steps.map((s) => ({ ...s })),
+    ingredients: recipe.ingredients.map((sec) => ({
+      name: sec.name,
+      items: sec.items.map((i) => ({ ...i })),
+    })),
+    steps: recipe.steps.map((sec) => ({
+      name: sec.name,
+      items: sec.items.map((s) => ({ ...s })),
+    })),
     tips: recipe.tips?.length ? [...recipe.tips] : undefined,
     changelog: recipe.changelog?.length ? [...recipe.changelog] : undefined,
     notes: recipe.notes,

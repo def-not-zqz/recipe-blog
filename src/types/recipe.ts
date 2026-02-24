@@ -22,6 +22,16 @@ export interface Step {
   image?: string;
 }
 
+export interface IngredientsSection {
+  name?: string;
+  items: Ingredient[];
+}
+
+export interface StepsSection {
+  name?: string;
+  items: Step[];
+}
+
 export interface Nutrition {
   calories?: number;
   protein?: number;
@@ -43,8 +53,8 @@ export interface Recipe {
   totalTimeMinutes?: number;
   difficulty?: Difficulty;
   category?: RecipeCategory;
-  ingredients: Ingredient[];
-  steps: Step[];
+  ingredients: IngredientsSection[];
+  steps: StepsSection[];
   tips?: string[];
   changelog?: string[];
   notes?: string;

@@ -1,4 +1,63 @@
-import type { Recipe } from "@/types/recipe";
+import type {
+  Recipe,
+  IngredientsSection,
+  StepsSection,
+} from "@/types/recipe";
+
+function isLegacyIngredientArray(arr: unknown): arr is { name: string }[] {
+  if (!Array.isArray(arr) || arr.length === 0) return false;
+  const first = arr[0];
+  return (
+    first != null &&
+    typeof first === "object" &&
+    "name" in first &&
+    typeof (first as { name: unknown }).name === "string" &&
+    !("items" in first)
+  );
+}
+
+function isLegacyStepsArray(arr: unknown): arr is { content: string }[] {
+  if (!Array.isArray(arr) || arr.length === 0) return false;
+  const first = arr[0];
+  return (
+    first != null &&
+    typeof first === "object" &&
+    "content" in first &&
+    !("items" in first)
+  );
+}
+
+function normalizeIngredientsJson(raw: unknown): IngredientsSection[] {
+  if (isLegacyIngredientArray(raw)) return [{ items: raw }];
+  if (Array.isArray(raw) && raw.length > 0) {
+    const first = raw[0];
+    if (
+      first != null &&
+      typeof first === "object" &&
+      "items" in first &&
+      Array.isArray((first as { items: unknown }).items)
+    ) {
+      return raw as IngredientsSection[];
+    }
+  }
+  return [{ items: [] }];
+}
+
+function normalizeStepsJson(raw: unknown): StepsSection[] {
+  if (isLegacyStepsArray(raw)) return [{ items: raw }];
+  if (Array.isArray(raw) && raw.length > 0) {
+    const first = raw[0];
+    if (
+      first != null &&
+      typeof first === "object" &&
+      "items" in first &&
+      Array.isArray((first as { items: unknown }).items)
+    ) {
+      return raw as StepsSection[];
+    }
+  }
+  return [{ items: [] }];
+}
 
 /** DB row shape for public.recipes (snake_case). */
 export interface RecipeRow {
@@ -38,8 +97,8 @@ export function rowToRecipe(row: RecipeRow): Recipe {
     difficulty: (row.difficulty as Recipe["difficulty"]) ?? undefined,
     category: (row.category as Recipe["category"]) ?? undefined,
     status: row.status as Recipe["status"],
-    ingredients: Array.isArray(row.ingredients_json) ? row.ingredients_json as Recipe["ingredients"] : [],
-    steps: Array.isArray(row.steps_json) ? row.steps_json as Recipe["steps"] : [],
+    ingredients: normalizeIngredientsJson(row.ingredients_json),
+    steps: normalizeStepsJson(row.steps_json),
     tips: Array.isArray(row.tips_json) ? (row.tips_json as string[]) : undefined,
     changelog: Array.isArray(row.changelog_json) ? (row.changelog_json as string[]) : undefined,
     notes: row.notes ?? undefined,
