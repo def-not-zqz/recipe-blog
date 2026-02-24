@@ -9,6 +9,16 @@ const DIFFICULTY_LABELS: Record<NonNullable<Recipe["difficulty"]>, string> = {
   hard: "困难",
 };
 
+const CATEGORY_LABELS: Record<NonNullable<Recipe["category"]>, string> = {
+  main: "主菜",
+  dessert: "甜点",
+  soup: "汤",
+  salad: "沙拉",
+  snack: "小吃",
+  beverage: "饮品",
+  other: "其他",
+};
+
 interface RecipeMetaProps {
   recipe: Recipe;
   className?: string;
@@ -32,6 +42,11 @@ export function RecipeMeta({ recipe, className }: RecipeMetaProps) {
         <Badge variant="secondary" className="gap-1 font-normal">
           <Clock className="h-3.5 w-3" />
           {totalMinutes} 分钟
+        </Badge>
+      )}
+      {recipe.category && (
+        <Badge variant="outline" className="font-normal">
+          {CATEGORY_LABELS[recipe.category]}
         </Badge>
       )}
       {recipe.difficulty && (
