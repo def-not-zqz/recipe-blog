@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { RecipeFormState } from "./recipe-form-types";
 import type { Step, StepsSection } from "@/types/recipe";
 import { Plus, Trash2 } from "lucide-react";
+import { resizeImageFileToDataUrl } from "@/lib/image-resize";
 
 interface StepStepsProps {
   state: RecipeFormState;
@@ -112,15 +113,21 @@ export function StepSteps({ state, onChange }: StepStepsProps) {
                           type="file"
                           accept="image/*"
                           className="sr-only"
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = () =>
-                                updateItem(sectionIdx, i, {
-                                  image: reader.result as string,
-                                });
-                              reader.readAsDataURL(file);
+                            if (!file) return;
+                            try {
+                              // Limit step images to at most ~720p for bandwidth.
+                              const dataUrl = await resizeImageFileToDataUrl(
+                                file,
+                                960,
+                                720
+                              );
+                              updateItem(sectionIdx, i, {
+                                image: dataUrl,
+                              });
+                            } catch {
+                              // Fallback: if resize fails, keep previous image unchanged.
                             }
                           }}
                         />
