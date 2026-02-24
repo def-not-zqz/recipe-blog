@@ -199,7 +199,7 @@ export default function RecipeDetailPage() {
             {recipe.steps.map((sec, sectionIdx) => (
               <div key={sectionIdx} className="space-y-2">
                 {sec.name?.trim() && (
-                  <h3 className="text-sm font-medium text-foreground">
+                  <h3 className="text-md font-semibold text-foreground">
                     {sec.name}
                   </h3>
                 )}
@@ -220,13 +220,13 @@ export default function RecipeDetailPage() {
             <Separator />
             <section aria-label="小贴士">
               <h2 className="mb-3 text-xl font-semibold">小贴士</h2>
-              <ul className="list-inside list-disc space-y-1 text-muted-foreground">
+              <ol className="list-inside list-decimal space-y-4 text-muted-foreground">
                 {recipe.tips!.map((tip, i) => (
                   <li key={i} className="text-foreground">
                     <MarkdownContent inline>{tip}</MarkdownContent>
                   </li>
                 ))}
-              </ul>
+              </ol>
             </section>
           </>
         )}

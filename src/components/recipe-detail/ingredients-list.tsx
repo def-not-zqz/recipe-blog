@@ -19,7 +19,7 @@ export function IngredientsList({
       {sections.map((section, sectionIdx) => (
         <div key={sectionIdx} className="space-y-1">
           {section.name?.trim() && (
-            <h3 className="text-sm font-medium text-foreground">
+            <h3 className="text-md font-semibold text-foreground">
               {section.name}
             </h3>
           )}

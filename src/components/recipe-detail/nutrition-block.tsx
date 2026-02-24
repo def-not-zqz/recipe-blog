@@ -11,13 +11,22 @@ import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 
 const NUTRITION_LABELS: Record<keyof Nutrition, string> = {
-  calories: "热量 (kcal)",
+  calories: "总热量 (kcal)",
   protein: "蛋白质 (g)",
-  fat: "脂肪 (g)",
   carbs: "碳水 (g)",
+  fat: "脂肪 (g)",
   fiber: "纤维 (g)",
   sodium: "钠 (mg)",
 };
+
+const NUTRITION_ORDER: readonly (keyof Nutrition)[] = [
+  "calories",
+  "protein",
+  "carbs",
+  "fat",
+  "fiber",
+  "sodium",
+] as const;
 
 interface NutritionBlockProps {
   nutrition: Nutrition;
@@ -32,9 +41,9 @@ export function NutritionBlock({
 }: NutritionBlockProps) {
   const [open, setOpen] = useState(false);
   const scaled = scaleNutrition(nutrition, scale);
-  const entries = Object.entries(scaled).filter(
-    ([_, v]) => typeof v === "number" && !Number.isNaN(v)
-  ) as [keyof Nutrition, number][];
+  const entries = NUTRITION_ORDER
+    .map((key) => [key, scaled[key]] as [keyof Nutrition, number])
+    .filter(([_, v]) => typeof v === "number" && !Number.isNaN(v));
 
   if (entries.length === 0) return null;
 
