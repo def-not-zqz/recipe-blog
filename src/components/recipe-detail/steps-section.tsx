@@ -14,7 +14,7 @@ export function StepsSectionView({ steps }: StepsSectionProps) {
         {steps.map((sec, sectionIdx) => (
           <div key={sectionIdx} className="space-y-2">
             {sec.name?.trim() && (
-              <h3 className="text-sm font-medium text-foreground">
+              <h3 className="text-md font-semibold text-foreground">
                 {sec.name}
               </h3>
             )}

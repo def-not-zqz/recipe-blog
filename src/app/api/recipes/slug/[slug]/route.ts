@@ -10,12 +10,20 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
+  let decodedSlug = slug;
+  try {
+    decodedSlug = decodeURIComponent(slug);
+  } catch {
+    // keep slug as-is if not valid %-encoding
+  }
+
   try {
     const recipe = await unstable_cache(
-      () => getRecipeBySlug(slug),
-      ["recipe-slug", slug],
+      () => getRecipeBySlug(decodedSlug),
+      ["recipe-slug", decodedSlug],
       { revalidate: CACHE_REVALIDATE_SECONDS }
     )();
+
     if (!recipe) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
