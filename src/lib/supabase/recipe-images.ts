@@ -1,16 +1,45 @@
+import sharp from "sharp";
 import { createServerSupabaseClient } from "./server";
-import type { Recipe, StepsSection } from "@/types/recipe";
+import type { Recipe } from "@/types/recipe";
 
 const RECIPE_IMAGES_BUCKET = "recipe-images";
 const STEP_IMAGES_BUCKET = "step-images";
 const STEP_IMAGE_MAX_BYTES = 1024 * 1024; // 1MB
+const STEP_IMAGE_MAX_WIDTH = 1280;
+const STEP_IMAGE_MAX_HEIGHT = 720;
 
-/** Thrown when a step image exceeds 1MB. API should return 400. */
+/** Thrown when a step image still exceeds 1MB after downsampling. API should return 400. */
 export class StepImageTooLargeError extends Error {
   constructor() {
     super("步骤图不能超过 1MB");
     this.name = "StepImageTooLargeError";
   }
+}
+
+/**
+ * Downsample a step image to max 720p and under 1MB. Returns JPEG buffer.
+ */
+async function downsampleStepImage(
+  buffer: Buffer,
+  _mime: string
+): Promise<{ buffer: Buffer; mime: string }> {
+  const resize = {
+    width: STEP_IMAGE_MAX_WIDTH,
+    height: STEP_IMAGE_MAX_HEIGHT,
+    fit: "inside" as const,
+    withoutEnlargement: true,
+  };
+  const qualities = [85, 70, 50, 35];
+  for (const q of qualities) {
+    const out = await sharp(buffer)
+      .resize(resize)
+      .jpeg({ quality: q })
+      .toBuffer();
+    if (out.length <= STEP_IMAGE_MAX_BYTES) {
+      return { buffer: out, mime: "image/jpeg" };
+    }
+  }
+  throw new StepImageTooLargeError();
 }
 
 function getExtensionFromMime(mime: string): string {
@@ -49,7 +78,8 @@ function getPublicUrl(bucket: string, path: string): string {
 /**
  * Upload recipe cover and step images from data URLs to Supabase Storage,
  * replace image fields with public URLs. Skips entries that are already URLs.
- * Throws StepImageTooLargeError if any step image exceeds 1MB.
+ * Step images are auto-downsampled to max 720p and under 1MB before upload.
+ * Throws StepImageTooLargeError only if a step image still exceeds 1MB after downsampling.
  */
 export async function uploadRecipeImages(recipe: Recipe): Promise<Recipe> {
   const supabase = createServerSupabaseClient();
@@ -70,7 +100,7 @@ export async function uploadRecipeImages(recipe: Recipe): Promise<Recipe> {
     }
   }
 
-  // Step images
+  // Step images: always downsample to max 720p and under 1MB, then upload as JPEG
   for (let si = 0; si < out.steps.length; si++) {
     const section = out.steps[si];
     if (!section?.items) continue;
@@ -80,13 +110,14 @@ export async function uploadRecipeImages(recipe: Recipe): Promise<Recipe> {
       if (!image?.startsWith("data:")) continue;
       const parsed = parseDataUrl(image);
       if (!parsed) continue;
-      if (parsed.buffer.length > STEP_IMAGE_MAX_BYTES) {
-        throw new StepImageTooLargeError();
-      }
-      const ext = getExtensionFromMime(parsed.mime);
+      const { buffer: stepBuffer, mime: stepMime } = await downsampleStepImage(
+        parsed.buffer,
+        parsed.mime
+      );
+      const ext = getExtensionFromMime(stepMime);
       const path = `${recipe.id}/${si}-${ii}.${ext}`;
-      const { error } = await supabase.storage.from(STEP_IMAGES_BUCKET).upload(path, parsed.buffer, {
-        contentType: parsed.mime,
+      const { error } = await supabase.storage.from(STEP_IMAGES_BUCKET).upload(path, stepBuffer, {
+        contentType: stepMime,
         upsert: true,
       });
       if (error) throw error;
