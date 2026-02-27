@@ -7,6 +7,8 @@ import type {
 
 /** Editable form state for create/edit. Same as Recipe but id/slug/dates optional for new. */
 export interface RecipeFormState {
+  /** Set once for new recipe so upload paths are stable. */
+  id?: string;
   title: string;
   description: string;
   image?: string;
@@ -34,6 +36,7 @@ export const defaultFormState: RecipeFormState = {
 
 export function recipeToFormState(recipe: Recipe): RecipeFormState {
   return {
+    id: recipe.id,
     title: recipe.title,
     description: recipe.description,
     image: recipe.image,

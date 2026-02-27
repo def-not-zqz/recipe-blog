@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +14,11 @@ import {
 } from "@/components/ui/select";
 import type { RecipeFormState } from "./recipe-form-types";
 import type { RecipeCategory, Difficulty } from "@/types/recipe";
+import {
+  uploadFileToSupabase,
+  RECIPE_IMAGES_BUCKET,
+  coverImagePath,
+} from "@/lib/upload";
 
 const CATEGORIES: { value: RecipeCategory; label: string }[] = [
   { value: "main", label: "主菜" },
@@ -33,9 +39,12 @@ const DIFFICULTIES: { value: Difficulty; label: string }[] = [
 interface StepBasicProps {
   state: RecipeFormState;
   onChange: (updates: Partial<RecipeFormState>) => void;
+  /** Stable recipe id for upload path (set for new recipe, or from initialRecipe). */
+  recipeId?: string;
 }
 
-export function StepBasic({ state, onChange }: StepBasicProps) {
+export function StepBasic({ state, onChange, recipeId }: StepBasicProps) {
+  const [uploading, setUploading] = useState(false);
   const total =
     state.totalTimeMinutes ??
     (state.prepTimeMinutes ?? 0) + (state.cookTimeMinutes ?? 0);
@@ -67,22 +76,34 @@ export function StepBasic({ state, onChange }: StepBasicProps) {
         <Label>封面</Label>
         <div className="mt-1 flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <label className="inline-flex cursor-pointer items-center rounded-md border border-border px-3 py-2 text-sm hover:bg-muted whitespace-nowrap">
+            <label className="inline-flex cursor-pointer items-center rounded-md border border-border px-3 py-2 text-sm hover:bg-muted whitespace-nowrap disabled:pointer-events-none disabled:opacity-50">
               <input
                 type="file"
                 accept="image/*"
                 className="sr-only"
-                onChange={(e) => {
+                disabled={!recipeId || uploading}
+                onChange={async (e) => {
                   const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onload = () =>
-                      onChange({ image: reader.result as string });
-                    reader.readAsDataURL(file);
+                  if (!file || !recipeId) return;
+                  e.target.value = "";
+                  setUploading(true);
+                  try {
+                    const path = coverImagePath(recipeId, file);
+                    const publicUrl = await uploadFileToSupabase(
+                      RECIPE_IMAGES_BUCKET,
+                      path,
+                      file
+                    );
+                    onChange({ image: publicUrl });
+                  } catch (err) {
+                    console.error(err);
+                    alert("上传失败: " + (err instanceof Error ? err.message : String(err)));
+                  } finally {
+                    setUploading(false);
                   }
                 }}
               />
-              上传
+              {uploading ? "上传中…" : "上传"}
             </label>
             {state.image && (
               <Button

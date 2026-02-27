@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { RecipeForm } from "@/components/recipe-form";
-import { saveRecipeAction } from "@/app/actions/recipes";
+import { saveRecipeViaApi } from "@/lib/api/recipes";
 import type { Recipe } from "@/types/recipe";
 
 export default function NewRecipePage() {
@@ -10,7 +10,7 @@ export default function NewRecipePage() {
 
   const handleSave = async (recipe: Recipe) => {
     try {
-      const result = await saveRecipeAction(recipe);
+      const result = await saveRecipeViaApi(recipe);
       if (result.success) {
         router.push(recipe.status === "published" ? "/" : "/drafts");
       } else {

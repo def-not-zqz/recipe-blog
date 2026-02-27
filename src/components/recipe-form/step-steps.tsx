@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import type { RecipeFormState } from "./recipe-form-types";
 import type { Step, StepsSection } from "@/types/recipe";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
-import { resizeImageFileToDataUrl } from "@/lib/image-resize";
+import {
+  uploadFileToSupabase,
+  STEP_IMAGES_BUCKET,
+  stepImagePath,
+} from "@/lib/upload";
 import {
   SortableList,
   type SortableItemData,
@@ -16,6 +21,8 @@ import {
 interface StepStepsProps {
   state: RecipeFormState;
   onChange: (updates: Partial<RecipeFormState>) => void;
+  /** Stable recipe id for upload path. */
+  recipeId?: string;
 }
 
 interface SectionItem extends SortableItemData {
@@ -26,8 +33,9 @@ interface StepItem extends SortableItemData {
   step: Step;
 }
 
-export function StepSteps({ state, onChange }: StepStepsProps) {
+export function StepSteps({ state, onChange, recipeId }: StepStepsProps) {
   const { steps: sections } = state;
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
 
   const updateSection = (sectionIdx: number, patch: Partial<StepsSection>) => {
     const next = sections.map((sec, i) =>
@@ -155,30 +163,50 @@ export function StepSteps({ state, onChange }: StepStepsProps) {
                           />
                           <div className="space-y-2">
                             <div className="flex flex-wrap items-center gap-2">
-                              <label className="inline-flex cursor-pointer items-center rounded-md border border-border px-3 py-2 text-xs hover:bg-muted whitespace-nowrap">
+                              <label className="inline-flex cursor-pointer items-center rounded-md border border-border px-3 py-2 text-xs hover:bg-muted whitespace-nowrap disabled:pointer-events-none disabled:opacity-50">
                                 <input
                                   type="file"
                                   accept="image/*"
                                   className="sr-only"
+                                  disabled={!recipeId || !!uploadingKey}
                                   onChange={async (e) => {
                                     const file = e.target.files?.[0];
-                                    if (!file) return;
+                                    if (!file || !recipeId) return;
+                                    e.target.value = "";
+                                    const key = `${sectionIdx}-${i}`;
+                                    setUploadingKey(key);
                                     try {
-                                      const dataUrl =
-                                        await resizeImageFileToDataUrl(
-                                          file,
-                                          960,
-                                          720
+                                      const path = stepImagePath(
+                                        recipeId,
+                                        sectionIdx,
+                                        i,
+                                        file
+                                      );
+                                      const publicUrl =
+                                        await uploadFileToSupabase(
+                                          STEP_IMAGES_BUCKET,
+                                          path,
+                                          file
                                         );
                                       updateItem(sectionIdx, i, {
-                                        image: dataUrl,
+                                        image: publicUrl,
                                       });
-                                    } catch {
-                                      // keep previous image if resize fails
+                                    } catch (err) {
+                                      console.error(err);
+                                      alert(
+                                        "上传失败: " +
+                                          (err instanceof Error
+                                            ? err.message
+                                            : String(err))
+                                      );
+                                    } finally {
+                                      setUploadingKey(null);
                                     }
                                   }}
                                 />
-                                上传图片
+                                {uploadingKey === `${sectionIdx}-${i}`
+                                  ? "上传中…"
+                                  : "上传图片"}
                               </label>
                               {hasImage && (
                                 <Button

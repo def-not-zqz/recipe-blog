@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
 import Link from "next/link";
 import { RecipeForm } from "@/components/recipe-form";
-import { saveRecipeAction } from "@/app/actions/recipes";
+import { saveRecipeViaApi } from "@/lib/api/recipes";
 import type { Recipe } from "@/types/recipe";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -55,7 +55,7 @@ export default function EditRecipePage() {
 
   const handleSave = async (updated: Recipe) => {
     try {
-      const result = await saveRecipeAction(updated);
+      const result = await saveRecipeViaApi(updated);
       if (result.success) {
         router.push(updated.status === "published" ? "/" : "/drafts");
       } else {

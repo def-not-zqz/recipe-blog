@@ -1,12 +1,10 @@
 "use server";
 
 import {
-  saveRecipe as dbSaveRecipe,
   deleteRecipe as dbDeleteRecipe,
   isSlugTaken as dbIsSlugTaken,
 } from "@/lib/supabase/recipes";
 import { isServerAdmin } from "@/lib/auth";
-import type { Recipe } from "@/types/recipe";
 
 export type RecipeActionResult = { success: true } | { success: false; error: string };
 
@@ -16,19 +14,6 @@ function getErrorMessage(e: unknown): string {
   if (typeof o?.message === "string") return o.message;
   if (typeof o?.details === "string") return o.details;
   return String(e) || "Failed to save recipe";
-}
-
-/** Server Action: create or update a recipe. Only admins. */
-export async function saveRecipeAction(recipe: Recipe): Promise<RecipeActionResult> {
-  try {
-    const admin = await isServerAdmin();
-    if (!admin) return { success: false, error: "需要管理员权限" };
-    await dbSaveRecipe(recipe);
-    return { success: true };
-  } catch (e) {
-    console.error("[saveRecipeAction]", e);
-    return { success: false, error: getErrorMessage(e) };
-  }
 }
 
 /** Server Action: delete a recipe by id. Only admins. */

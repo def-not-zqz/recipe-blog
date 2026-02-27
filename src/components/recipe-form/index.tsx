@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StepBasic } from "./step-basic";
@@ -45,6 +45,13 @@ export function RecipeForm({
   );
   const [activeStep, setActiveStep] = useState(0);
   const [saving, setSaving] = useState(false);
+
+  // Stable recipeId for new recipe so upload paths are consistent before save
+  useEffect(() => {
+    if (!initialRecipe && !state.id) {
+      setState((prev) => ({ ...prev, id: crypto.randomUUID() }));
+    }
+  }, [initialRecipe, state.id]);
 
   const update = useCallback((updates: Partial<RecipeFormState>) => {
     setState((prev) => ({ ...prev, ...updates }));
@@ -94,13 +101,21 @@ export function RecipeForm({
         </TabsList>
 
         <TabsContent value="basic" className="mt-4">
-          <StepBasic state={state} onChange={update} />
+          <StepBasic
+            state={state}
+            onChange={update}
+            recipeId={state.id ?? initialRecipe?.id}
+          />
         </TabsContent>
         <TabsContent value="ingredients" className="mt-4">
           <StepIngredients state={state} onChange={update} />
         </TabsContent>
         <TabsContent value="steps" className="mt-4">
-          <StepSteps state={state} onChange={update} />
+          <StepSteps
+            state={state}
+            onChange={update}
+            recipeId={state.id ?? initialRecipe?.id}
+          />
         </TabsContent>
         <TabsContent value="tips" className="mt-4">
           <StepTips state={state} onChange={update} />
@@ -139,7 +154,7 @@ async function formStateToRecipe(
   existing?: Recipe
 ): Promise<Recipe> {
   const now = new Date().toISOString();
-  const id = existing?.id ?? crypto.randomUUID();
+  const id = state.id ?? existing?.id ?? crypto.randomUUID();
   let finalSlug: string;
   if (existing) {
     finalSlug = existing.slug;
