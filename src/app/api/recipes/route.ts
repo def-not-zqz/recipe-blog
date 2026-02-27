@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { getPublishedRecipes, saveRecipe } from "@/lib/supabase/recipes";
+import {
+  uploadRecipeImages,
+  StepImageTooLargeError,
+} from "@/lib/supabase/recipe-images";
 import { isServerAdmin } from "@/lib/auth";
 import type { Recipe } from "@/types/recipe";
 
@@ -32,9 +36,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "需要管理员权限" }, { status: 403 });
     }
     const body = (await request.json()) as Recipe;
-    await saveRecipe(body);
+    const recipeWithUrls = await uploadRecipeImages(body);
+    await saveRecipe(recipeWithUrls);
     return NextResponse.json({ success: true });
   } catch (e) {
+    if (e instanceof StepImageTooLargeError) {
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    }
     console.error(e);
     return NextResponse.json(
       { error: "Failed to save recipe" },

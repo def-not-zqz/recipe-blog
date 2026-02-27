@@ -48,3 +48,6 @@ next-env.d.ts
 
 # docs
 /docs
+
+# one-time migration script (run manually, then ignore)
+scripts/migrate-recipe-images.ts
