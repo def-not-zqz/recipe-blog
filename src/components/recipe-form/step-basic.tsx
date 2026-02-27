@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -64,24 +65,45 @@ export function StepBasic({ state, onChange }: StepBasicProps) {
       </div>
       <div>
         <Label>封面</Label>
-        <div className="mt-1 flex gap-2">
-          <label className="inline-flex cursor-pointer items-center rounded-md border border-border px-3 py-2 text-sm hover:bg-muted whitespace-nowrap">
-            <input
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  const reader = new FileReader();
-                  reader.onload = () =>
-                    onChange({ image: reader.result as string });
-                  reader.readAsDataURL(file);
-                }
-              }}
-            />
-            上传
-          </label>
+        <div className="mt-1 flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="inline-flex cursor-pointer items-center rounded-md border border-border px-3 py-2 text-sm hover:bg-muted whitespace-nowrap">
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = () =>
+                      onChange({ image: reader.result as string });
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+              上传
+            </label>
+            {state.image && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => onChange({ image: undefined })}
+              >
+                移除封面
+              </Button>
+            )}
+          </div>
+          {state.image && (
+            <div className="relative h-28 w-48 overflow-hidden rounded-md border border-border bg-background">
+              <img
+                src={state.image}
+                alt="封面预览"
+                className="h-full w-full object-cover"
+              />
+            </div>
+          )}
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">

@@ -6,12 +6,24 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { RecipeFormState } from "./recipe-form-types";
 import type { Step, StepsSection } from "@/types/recipe";
-import { Plus, Trash2 } from "lucide-react";
+import { GripVertical, Plus, Trash2 } from "lucide-react";
 import { resizeImageFileToDataUrl } from "@/lib/image-resize";
+import {
+  SortableList,
+  type SortableItemData,
+} from "./dnd/sortable-list";
 
 interface StepStepsProps {
   state: RecipeFormState;
   onChange: (updates: Partial<RecipeFormState>) => void;
+}
+
+interface SectionItem extends SortableItemData {
+  section: StepsSection;
+}
+
+interface StepItem extends SortableItemData {
+  step: Step;
 }
 
 export function StepSteps({ state, onChange }: StepStepsProps) {
@@ -61,111 +73,173 @@ export function StepSteps({ state, onChange }: StepStepsProps) {
   return (
     <div className="space-y-4">
       <Label>步骤</Label>
-      {sections.map((section, sectionIdx) => (
-        <div
-          key={sectionIdx}
-          className="rounded-md border border-border p-3 space-y-3"
-        >
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder="步骤分组（选填）"
-              value={section.name ?? ""}
-              onChange={(e) =>
-                updateSectionName(sectionIdx, e.target.value)
-              }
-              className="flex-1"
-            />
-            {sections.length > 1 && (
+      <SortableList<SectionItem>
+        items={sections.map((section, index) => ({
+          id: String(index),
+          section,
+        }))}
+        onReorder={(items) =>
+          onChange({
+            steps: items.map((item) => item.section),
+          })
+        }
+        renderItem={(item, sortable, sectionIdx) => {
+          const { section } = item;
+          return (
+            <div className="space-y-3 rounded-md border border-border bg-background p-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="flex h-9 w-9 items-center justify-center rounded-md border border-transparent text-muted-foreground hover:border-border hover:bg-muted"
+                  aria-label="拖动调整步骤分组顺序"
+                  {...sortable.attributes}
+                  {...sortable.listeners}
+                >
+                  <GripVertical className="h-4 w-4" />
+                </button>
+                <Input
+                  placeholder="步骤分组（选填）"
+                  value={section.name ?? ""}
+                  onChange={(e) => updateSectionName(sectionIdx, e.target.value)}
+                  className="flex-1"
+                />
+                {sections.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeSection(sectionIdx)}
+                    aria-label="删除分组"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              <ol className="space-y-3">
+                <SortableList<StepItem>
+                  items={section.items.map((step, i) => ({
+                    id: `${sectionIdx}-${i}`,
+                    step,
+                  }))}
+                  onReorder={(items) =>
+                    updateSection(sectionIdx, {
+                      items: items.map((it) => it.step),
+                    })
+                  }
+                  renderItem={(item, innerSortable, i) => {
+                    const step = item.step;
+                    const hasImage = !!step.image;
+                    return (
+                      <li className="flex gap-2 rounded-md border border-border/60 bg-muted/20 p-3">
+                        <button
+                          type="button"
+                          className="mt-1 flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-muted-foreground hover:border-border hover:bg-muted"
+                          aria-label="拖动调整步骤顺序"
+                          {...innerSortable.attributes}
+                          {...innerSortable.listeners}
+                        >
+                          <GripVertical className="h-3 w-3" />
+                        </button>
+                        <span className="flex h-9 shrink-0 items-center font-medium text-muted-foreground">
+                          {i + 1}.
+                        </span>
+                        <div className="flex min-w-0 flex-1 flex-col gap-2">
+                          <Textarea
+                            placeholder="步骤说明*"
+                            value={step.content}
+                            onChange={(e) =>
+                              updateItem(sectionIdx, i, { content: e.target.value })
+                            }
+                            rows={2}
+                            className="min-w-0"
+                          />
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <label className="inline-flex cursor-pointer items-center rounded-md border border-border px-3 py-2 text-xs hover:bg-muted whitespace-nowrap">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="sr-only"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    try {
+                                      const dataUrl =
+                                        await resizeImageFileToDataUrl(
+                                          file,
+                                          960,
+                                          720
+                                        );
+                                      updateItem(sectionIdx, i, {
+                                        image: dataUrl,
+                                      });
+                                    } catch {
+                                      // keep previous image if resize fails
+                                    }
+                                  }}
+                                />
+                                上传图片
+                              </label>
+                              {hasImage && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    updateItem(sectionIdx, i, { image: undefined })
+                                  }
+                                >
+                                  移除图片
+                                </Button>
+                              )}
+                            </div>
+                            {hasImage && (
+                              <div className="flex items-center gap-3">
+                                <div className="relative h-24 w-40 overflow-hidden rounded-md border border-border bg-background">
+                                  <img
+                                    src={step.image}
+                                    alt="步骤图片预览"
+                                    className="h-full w-full object-cover"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0"
+                          onClick={() => removeItem(sectionIdx, i)}
+                          aria-label="删除步骤"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </li>
+                    );
+                  }}
+                />
+              </ol>
               <Button
                 type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => removeSection(sectionIdx)}
-                aria-label="删除分组"
+                variant="outline"
+                size="sm"
+                onClick={() => addItem(sectionIdx)}
+                className="w-full"
               >
-                <Trash2 className="h-4 w-4" />
+                <Plus className="h-4 w-4" />
+                添加步骤
               </Button>
-            )}
-          </div>
-          <ol className="space-y-3">
-            {section.items.map((step, i) => (
-              <li
-                key={i}
-                className="flex gap-2 rounded-md border border-border/60 bg-muted/20 p-3"
-              >
-                <span className="flex h-9 shrink-0 items-center font-medium text-muted-foreground">
-                  {i + 1}.
-                </span>
-                <div className="flex min-w-0 flex-1 flex-col gap-2">
-                  <Textarea
-                    placeholder="步骤说明*"
-                    value={step.content}
-                    onChange={(e) =>
-                      updateItem(sectionIdx, i, { content: e.target.value })
-                    }
-                    rows={2}
-                    className="min-w-0"
-                  />
-                  <div className="space-y-1">
-                    <div className="flex gap-2">
-                      <label className="inline-flex cursor-pointer items-center rounded-md border border-border px-3 py-2 text-xs hover:bg-muted whitespace-nowrap">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="sr-only"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            try {
-                              // Limit step images to at most ~720p for bandwidth.
-                              const dataUrl = await resizeImageFileToDataUrl(
-                                file,
-                                960,
-                                720
-                              );
-                              updateItem(sectionIdx, i, {
-                                image: dataUrl,
-                              });
-                            } catch {
-                              // Fallback: if resize fails, keep previous image unchanged.
-                            }
-                          }}
-                        />
-                        上传图片
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="shrink-0"
-                  onClick={() => removeItem(sectionIdx, i)}
-                  aria-label="删除步骤"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </li>
-            ))}
-          </ol>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => addItem(sectionIdx)}
-            className="w-full"
-          >
-            <Plus className="h-4 w-4" />
-            添加步骤
-          </Button>
-          {section.items.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              暂无步骤，点击「添加步骤」添加。
-            </p>
-          )}
-        </div>
-      ))}
+              {section.items.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  暂无步骤，点击「添加步骤」添加。
+                </p>
+              )}
+            </div>
+          );
+        }}
+      />
       <Button type="button" variant="outline" size="sm" onClick={addSection}>
         <Plus className="h-4 w-4" />
         添加步骤分组
