@@ -3,13 +3,26 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { GripVertical, Plus, Trash2 } from "lucide-react";
 import type { RecipeFormState } from "./recipe-form-types";
 import type { Ingredient, IngredientsSection } from "@/types/recipe";
-import { Plus, Trash2 } from "lucide-react";
+import {
+  SortableList,
+  type SortableItemData,
+  type SortableRenderProps,
+} from "./dnd/sortable-list";
 
 interface StepIngredientsProps {
   state: RecipeFormState;
   onChange: (updates: Partial<RecipeFormState>) => void;
+}
+
+interface SectionItem extends SortableItemData {
+  section: IngredientsSection;
+}
+
+interface IngredientItem extends SortableItemData {
+  ingredient: Ingredient;
 }
 
 function updateItems(
@@ -87,100 +100,139 @@ export function StepIngredients({ state, onChange }: StepIngredientsProps) {
       </div>
       <div className="space-y-4">
         <Label>原料</Label>
-        {sections.map((section, sectionIdx) => (
-          <div
-            key={sectionIdx}
-            className="rounded-md border border-border p-3 space-y-2"
-          >
-            <div className="flex items-center gap-2">
-              <Input
-                placeholder="原料分组（选填）"
-                value={section.name ?? ""}
-                onChange={(e) =>
-                  updateSectionName(sectionIdx, e.target.value)
-                }
-                className="flex-1"
-              />
-              {sections.length > 1 && (
+        <SortableList<SectionItem>
+          items={sections.map((section, index) => ({
+            id: String(index),
+            section,
+          }))}
+          onReorder={(items) =>
+            onChange({
+              ingredients: items.map((item) => item.section),
+            })
+          }
+          renderItem={(item, sortable, sectionIdx) => {
+            const { section } = item;
+            return (
+              <div
+                className="space-y-2 rounded-md border border-border bg-background p-3"
+              >
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="flex h-9 w-9 items-center justify-center rounded-md border border-transparent text-muted-foreground hover:border-border hover:bg-muted"
+                    aria-label="拖动调整原料分组顺序"
+                    {...sortable.attributes}
+                    {...sortable.listeners}
+                  >
+                    <GripVertical className="h-4 w-4" />
+                  </button>
+                  <Input
+                    placeholder="原料分组（选填）"
+                    value={section.name ?? ""}
+                    onChange={(e) => updateSectionName(sectionIdx, e.target.value)}
+                    className="flex-1"
+                  />
+                  {sections.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeSection(sectionIdx)}
+                      aria-label="删除分组"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                <ul className="space-y-2">
+                  <SortableList<IngredientItem>
+                    items={section.items.map((ing, i) => ({
+                      id: `${sectionIdx}-${i}`,
+                      ingredient: ing,
+                    }))}
+                    onReorder={(items) =>
+                      updateSection(sectionIdx, {
+                        items: items.map((it) => it.ingredient),
+                      })
+                    }
+                    renderItem={(item, innerSortable, i) => (
+                      <li
+                        className="flex flex-wrap items-center gap-2 rounded border border-border/60 bg-muted/20 p-2"
+                      >
+                        <button
+                          type="button"
+                          className="flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-muted-foreground hover:border-border hover:bg-muted"
+                          aria-label="拖动调整原料顺序"
+                          {...innerSortable.attributes}
+                          {...innerSortable.listeners}
+                        >
+                          <GripVertical className="h-3 w-3" />
+                        </button>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.25}
+                          placeholder="量"
+                          value={item.ingredient.amount ?? ""}
+                          onChange={(e) =>
+                            updateItem(sectionIdx, i, {
+                              amount: e.target.value
+                                ? Number(e.target.value)
+                                : undefined,
+                            })
+                          }
+                          className="w-20 shrink-0"
+                        />
+                        <Input
+                          placeholder="单位"
+                          value={item.ingredient.unit ?? ""}
+                          onChange={(e) =>
+                            updateItem(sectionIdx, i, {
+                              unit: e.target.value || undefined,
+                            })
+                          }
+                          className="w-24 shrink-0"
+                        />
+                        <Input
+                          placeholder="名称 *"
+                          value={item.ingredient.name}
+                          onChange={(e) =>
+                            updateItem(sectionIdx, i, { name: e.target.value })
+                          }
+                          className="min-w-0 flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeItem(sectionIdx, i)}
+                          aria-label="删除"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </li>
+                    )}
+                  />
+                </ul>
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeSection(sectionIdx)}
-                  aria-label="删除分组"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addItem(sectionIdx)}
+                  className="w-full"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Plus className="h-4 w-4" />
+                  添加
                 </Button>
-              )}
-            </div>
-            <ul className="space-y-2">
-              {section.items.map((ing, i) => (
-                <li
-                  key={i}
-                  className="flex flex-wrap items-center gap-2 rounded border border-border/60 bg-muted/20 p-2"
-                >
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.25}
-                    placeholder="量"
-                    value={ing.amount ?? ""}
-                    onChange={(e) =>
-                      updateItem(sectionIdx, i, {
-                        amount: e.target.value
-                          ? Number(e.target.value)
-                          : undefined,
-                      })
-                    }
-                    className="w-20 shrink-0"
-                  />
-                  <Input
-                    placeholder="单位"
-                    value={ing.unit ?? ""}
-                    onChange={(e) =>
-                      updateItem(sectionIdx, i, {
-                        unit: e.target.value || undefined,
-                      })
-                    }
-                    className="w-24 shrink-0"
-                  />
-                  <Input
-                    placeholder="名称 *"
-                    value={ing.name}
-                    onChange={(e) =>
-                      updateItem(sectionIdx, i, { name: e.target.value })
-                    }
-                    className="min-w-0 flex-1"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeItem(sectionIdx, i)}
-                    aria-label="删除"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => addItem(sectionIdx)}
-              className="w-full"
-            >
-              <Plus className="h-4 w-4" />
-              添加
-            </Button>
-            {section.items.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                暂无原料，点击「添加」添加一条。留空「量」表示适量等。
-              </p>
-            )}
-          </div>
-        ))}
+                {section.items.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    暂无原料，点击「添加」添加一条。留空「量」表示适量等。
+                  </p>
+                )}
+              </div>
+            );
+          }}
+        />
         <Button type="button" variant="outline" size="sm" onClick={addSection}>
           <Plus className="h-4 w-4" />
           添加原料分组
